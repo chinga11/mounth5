@@ -2,7 +2,12 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Category,Product,Review
+from django.db.models import Avg
 from .serializers import CategoryListSerialiser,ProductListSerialiser,ReviewListSerialiser,CategoryDetailSerialiser,ProductDetailSerialiser,ReviewDetailSerialiser
+from .serializers import ProductWithReviewsSerializer,ProductCountSerializer
+from rest_framework.views import APIView
+from django.db.models import Count
+from rest_framework.generics import ListAPIView
 
 
 @api_view(http_method_names=['GET'])
@@ -62,3 +67,31 @@ def review_detail(request,id):
     return Response(
         status=status.HTTP_200_OK,
         data=data)
+
+
+
+
+class ProductsReviewsView(APIView):
+    def get(self, request):
+        products = Product.objects.all().prefetch_related('reviews')
+        serializer = ProductWithReviewsSerializer(products, many=True)
+
+        
+        global_avg_rating = Review.objects.aggregate(
+            avg_rating=Avg('rating')
+        )['avg_rating'] or 0
+
+        return Response({
+            "global_average_rating": global_avg_rating,
+            "products": serializer.data
+        })
+    
+
+class ProductCountAPIView(ListAPIView):
+    serializer_class = ProductCountSerializer
+
+
+    def get_queryset(self):
+        return Category.objects.annotate(
+            products_count=Count('product')
+        )

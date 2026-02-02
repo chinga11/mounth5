@@ -17,6 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from product import views
+from product.views import ProductsReviewsView,ProductCountAPIView
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,4 +28,6 @@ urlpatterns = [
     path('api/v1/product/<int:id>/',views.product_detail),
     path('api/v1/review',views.review_list),
     path('api/v1/review/<int:id>/',views.review_detail),
+    path('api/v1/products/reviews/', ProductsReviewsView.as_view()),
+    path('api/v1/categories/', ProductCountAPIView.as_view()),
 ]
