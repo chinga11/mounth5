@@ -10,11 +10,10 @@ from django.db import transaction
 from rest_framework.views import APIView
 from django.db.models import Count
 from rest_framework.generics import ListAPIView
+from django.http import Http404
 
-
-@api_view(http_method_names=['GET','POST'])
-def category_list(request):
-    if request.method == 'GET':
+class CategoryListView(APIView):
+    def get(self,request):
         category = Category.objects.prefetch_related('product_set__reviews').all()
         data = CategoryListSerialiser(instance=category, many=True).data
         
@@ -22,7 +21,7 @@ def category_list(request):
             status=status.HTTP_200_OK,
             data=data
         )
-    elif request.method == 'POST':
+    def post(self,request):
         serialiser = CategoryValidateSerialiser(data=request.data)
         if not serialiser.is_valid():
             return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -37,30 +36,32 @@ def category_list(request):
         return Response(status=status.HTTP_201_CREATED,
                         data=CategoryDetailSerialiser(category).data)
 
-@api_view(['GET','PUT','DELETE'])
-def category_detail(request,id):
-    try:
-        category = Category.objects.get(id=id)
-    except Category.DoesNotExist:
-        return Response(data={'error':'category not found'},status=status.HTTP_404_NOT_FOUND)
-    if request.method == 'GET':
+class CategoryDetailView(APIView):
+    
+    def get_object(self, id):
+        try:
+            return Category.objects.get(id=id)
+        except Category.DoesNotExist:
+            raise Http404
+    
+    def get(self,request,id):
+        category = self.get_object(id)
         data = CategoryDetailSerialiser(category,many=False).data
         return Response(data=data)
-    elif request.method =='PUT':
+    def put(self,request,id):
+        category = self.get_object(id)
         serialiser = CategoryValidateSerialiser(data=request.data)
         serialiser.is_valid(raise_exception=True)
-
         category.name = serialiser.validated_data.get('name')
         category.save()
-        return Response(status=status.HTTP_201_CREATED,data=CategoryDetailSerialiser(category).data)
-    elif request.method == 'DELETE':
+        return Response(status=status.HTTP_200_OK,data=CategoryDetailSerialiser(category).data)
+    def delete(self,request,id):
+        category = self.get_object(id)
         category.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-@api_view(http_method_names=['GET','POST'])
-def product_list(request):
-    if request.method == 'GET':
+class ProductListView(APIView):
+    def get(self,request):
         product = (Product.objects.select_related('category').prefetch_related('reviews').all())
 
         data = ProductListSerialiser(instance=product, many=True).data
@@ -68,7 +69,7 @@ def product_list(request):
             status=status.HTTP_200_OK,
             data=data
     )
-    elif request.method == 'POST':
+    def post(self,request):
         serializer = ProductValidateSerialiser(data=request.data)
         if not serializer.is_valid():
             return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -86,20 +87,22 @@ def product_list(request):
                 category =category,
                 product_count = product_count,
         )
-        product.save()
+            product.save()
 
-    return Response(status=status.HTTP_201_CREATED,data=ProductDetailSerialiser(product).data)
+        return Response(status=status.HTTP_201_CREATED,data=ProductDetailSerialiser(product).data)
 
-@api_view(['GET','PUT','DELETE'])
-def product_detail(request,id):
-    try:
-        product = Product.objects.get(id=id)
-    except Product.DoesNotExist:
-        return Response(data={'error':'product not found'},status=status.HTTP_404_NOT_FOUND)
-    if request.method == 'GET':
+class ProductDetailView(APIView):
+    def get_object(self,id):
+        try:
+            return Product.objects.get(id=id)
+        except Product.DoesNotExist:
+            raise Http404
+    def get(self,request,id):
+        product = self.get_object(id)
         data = ProductDetailSerialiser(product,many=False).data
         return Response(data=data)
-    elif request.method == 'PUT':
+    def put(self,request,id):
+        product = self.get_object(id)
         serialiser = ProductValidateSerialiser(data=request.data)
         serialiser.is_valid(raise_exception=True)
         product.title = serialiser.validated_data.get('title')
@@ -108,15 +111,14 @@ def product_detail(request,id):
         product.category = serialiser.validated_data.get('category')
         product.product_count = serialiser.validated_data.get('product_count')
         product.save()
-        return Response(status=status.HTTP_201_CREATED,data=ProductDetailSerialiser(product).data)
-    elif request.method == 'DELETE':
+        return Response(status=status.HTTP_200_OK,data=ProductDetailSerialiser(product).data)
+    def delete(self,request,id):
+        product = self.get_object(id)
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-
-@api_view(http_method_names=['GET','POST'])
-def review_list(request):
-    if request.method == 'GET':
+class ReviewListView(APIView):
+    def get(self,request):
         review = (Review.objects.select_related('product__category').all())
         data = ReviewListSerialiser(instance=review, many= True).data
         return Response(
@@ -124,7 +126,7 @@ def review_list(request):
             data=data
     )
 
-    elif request.method == 'POST':
+    def post(self,request):
         serialiser = ReviewValidateSerialiser(data=request.data)
         if not serialiser.is_valid():
             return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -141,26 +143,29 @@ def review_list(request):
             review.save()
         return Response(status=status.HTTP_201_CREATED,data = ReviewDetailSerialiser(review).data)
     
-@api_view(['GET','PUT','DELETE'])
-def review_detail(request,id):
-    try:
-        review = Review.objects.get(id=id)
-    except Review.DoesNotExist:
-        return Response(data={'error':'review not found'},status=status.HTTP_404_NOT_FOUND)
-    if request.method == 'GET':
+class ReviewDetailView(APIView):
+    def get_object(self,id):
+        try:
+            return Review.objects.get(id=id)
+        except Review.DoesNotExist:
+            raise Http404
+    def get (self,request,id):
+        review = self.get_object(id)
         data = ReviewDetailSerialiser(review,many=False).data
         return Response(
             status=status.HTTP_200_OK,
             data=data)
-    elif request.method == 'PUT':
+    def put(self,request,id):
+        review = self.get_object(id)
         serializer = ReviewValidateSerialiser(data=request.data)
         serializer.is_valid(raise_exception=True)
         review.text = serializer.validated_data.get('text')
         review.rating = serializer.validated_data.get('rating')
         review.product = serializer.validated_data.get('product')
         review.save()
-        return Response(status=status.HTTP_201_CREATED,data=ReviewDetailSerialiser(review).data)
-    elif request.method == 'DELETE':
+        return Response(status=status.HTTP_200_OK,data=ReviewDetailSerialiser(review).data)
+    def delete(self,request,id):
+        review = self.get_object(id)
         review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

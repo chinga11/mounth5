@@ -1,11 +1,18 @@
 from django.urls import path
 from . import views
-
+from .views import (
+    CategoryDetailView,
+    CategoryListView,
+    ProductListView,
+    ProductDetailView,
+    ReviewListView,
+    ReviewDetailView,
+)
 urlpatterns = [
-    path('', views.category_list),
-    path('<int:id>/', views.category_detail),
-    path('',views.product_list),
-    path('<int:id>/', views.product_detail),
-    path('',views.review_list),
-    path('<int:id>/',views.review_detail),
+    path('', CategoryListView.as_view()),
+    path('<int:id>/', CategoryDetailView.as_view()),
+    path('',ProductListView.as_view()),
+    path('<int:id>/', ProductDetailView.as_view()),
+    path('', ReviewListView.as_view()),
+    path('<int:id>/',ReviewDetailView.as_view()),
 ]
