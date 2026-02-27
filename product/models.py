@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models import Avg
-
+from users.models import CustomUser
 class Category(models.Model):
     name = models.CharField(max_length=255)
     
@@ -13,6 +13,7 @@ class Product(models.Model):
     price = models.IntegerField()
     category = models.ForeignKey(Category,on_delete=models.CASCADE)
     product_count = models.IntegerField(null=True,blank=True)
+    owner = models.ForeignKey(to=CustomUser,on_delete=models.CASCADE)
 
     def average_rating(self):
         return self.reviews.aggregate(avg=Avg('rating'))['avg'] or 0

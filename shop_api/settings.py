@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'product',
     'rest_framework',
     'users',
+    'common',
     'rest_framework.authtoken',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -133,3 +134,13 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = "users.CustomUser"
+
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS" :{
+        "AuthToken": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from django.db.models import Count
 from rest_framework.generics import ListAPIView
 from django.http import Http404
+from common.permissions import IsOwner,IsAnonymous
 
 class CategoryListView(APIView):
     def get(self,request):
@@ -61,6 +62,7 @@ class CategoryDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class ProductListView(APIView):
+    permission_classes = (IsOwner | IsAnonymous,)
     def get(self,request):
         product = (Product.objects.select_related('category').prefetch_related('reviews').all())
 
@@ -92,6 +94,7 @@ class ProductListView(APIView):
         return Response(status=status.HTTP_201_CREATED,data=ProductDetailSerialiser(product).data)
 
 class ProductDetailView(APIView):
+    permission_classes = [IsOwner]
     def get_object(self,id):
         try:
             return Product.objects.get(id=id)
